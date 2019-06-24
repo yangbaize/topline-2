@@ -1,17 +1,19 @@
 <template>
   <div>
-    <router-view></router-view>
+    <p>AppHome component</p>
   </div>
 </template>
 
 <script>
 export default {
-  name: 'App',
+  name: 'AppHome',
   data () {
-    return {}
+    return {
+
+    }
   }
 }
 </script>
 
-<style lang="less" scoped>
+<style lang="scss" scoped>
 </style>

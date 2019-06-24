@@ -14,4 +14,7 @@ export default {
 </script>
 
 <style lang="less" scoped>
+  div {
+    height: 100%;
+  }
 </style>

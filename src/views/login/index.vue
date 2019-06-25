@@ -36,6 +36,13 @@
             <el-button @click="handleSendCode">获取验证码</el-button>
           </el-col>
         </el-form-item>
+        <!-- <el-form-item prop="agree">
+          <el-checkbox
+            class="agree-checkbox"
+            v-model="form.agree"
+          ></el-checkbox>
+          <span class="agree-text">我已阅读并同意<a href="#">用户协议</a>和<a href="#">隐私条款</a></span>
+        </el-form-item> -->
         <el-form-item>
           <el-button
             class="btn-login"
@@ -59,16 +66,21 @@ export default {
       form: {
         mobile: '',
         code: ''
+        // agree: ''
       },
       rules: {
         mobile: [
           { required: true, message: '请输入手机号', trigger: 'blur' },
-          { len: /\d{11}/, message: '长度11个字符', trigger: 'blur' }
+          { pattern: /\d{11}/, message: '长度11个字符', trigger: 'blur' }
         ],
         code: [
           { required: true, message: '请输入验证码', trigger: 'blur' },
-          { len: /\d{6}/, message: '长度6个字符', trigger: 'blur' }
+          { pattern: /\d{6}/, message: '长度6个字符', trigger: 'blur' }
         ]
+        // agree: [
+        //   { required: true, message: '请同意用户协议' },
+        //   { pattern: /true/, message: '请同意用户协议' }
+        // ]
       }
     }
   },

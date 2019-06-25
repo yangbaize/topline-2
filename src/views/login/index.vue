@@ -12,14 +12,15 @@
         class="form-content"
         ref="form"
         :model="form"
+        :rules="rules"
       >
-        <el-form-item>
+        <el-form-item prop="mobile">
           <el-input
             v-model="form.mobile"
             placeholder="手机号"
           ></el-input>
         </el-form-item>
-        <el-form-item>
+        <el-form-item prop="code">
           <!-- el-col 栅格布局，一共 24 列，:span 用来指定占用的大小，:offset 用来指定偏移量 -->
           <el-col :span="14">
             <el-input
@@ -58,6 +59,16 @@ export default {
       form: {
         mobile: '',
         code: ''
+      },
+      rules: {
+        mobile: [
+          { required: true, message: '请输入手机号', trigger: 'blur' },
+          { len: /\d{11}/, message: '长度11个字符', trigger: 'blur' }
+        ],
+        code: [
+          { required: true, message: '请输入验证码', trigger: 'blur' },
+          { len: /\d{6}/, message: '长度6个字符', trigger: 'blur' }
+        ]
       }
     }
   },
@@ -111,6 +122,15 @@ export default {
     },
     // 登录请求
     handleLogin () {
+      this.$refs['form'].validate((valid) => {
+        if (!valid) {
+          return
+        }
+        // 表单验证通过.提交登录请求
+        this.submitLogin()
+      })
+    },
+    submitLogin () {
       axios({
         method: 'POST',
         url: 'http://ttapi.research.itcast.cn/mp/v1_0/authorizations',
@@ -118,7 +138,7 @@ export default {
       })
         .then(res => {
           this.$message({
-            message: '恭喜你，这是一条成功消息',
+            message: '恭喜你，登录成功',
             type: 'success'
           })
           this.$router.push({
@@ -126,7 +146,7 @@ export default {
           })
         })
         .catch((e) => {
-          this.$message.error('错了哦，这是一条错误消息')
+          this.$message.error('错了哦，请重新登陆')
         })
     }
   }

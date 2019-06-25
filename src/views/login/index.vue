@@ -39,7 +39,7 @@
           <el-button
             class="btn-login"
             type="primary"
-            @click="onSubmit"
+            @click="handleLogin"
           >登录</el-button>
         </el-form-item>
       </el-form>
@@ -72,7 +72,7 @@ export default {
         methods: 'GET',
         url: `http://ttapi.research.itcast.cn/mp/v1_0/captchas/${mobile}`
       }).then(res => {
-        // 根据第一次与后端交互得到的数据-用于与极验服务器交互 -得到人机交互弹框-并得到申请短信接口的数据
+        // 根据第一次与后端请求得到的数据-用于与极验服务器交互 -得到人机交互弹框-并得到申请短信接口的数据
         const { data } = res.data
         window.initGeetest({// 以下配置参数来自服务端 SDK
           gt: data.gt,
@@ -86,12 +86,12 @@ export default {
             // 验证码ready之后才能调用verify方法显示验证码
             captchaObj.verify()
           }).onSuccess(function () {
-            // your code
             // console.log(captchaObj.getValidate())
             const { geetest_validate: validate,
               geetest_seccode: seccode,
               geetest_challenge: challenge
             } = captchaObj.getValidate()
+            // 请求短信接口
             axios({
               methods: 'GET',
               url: `http://ttapi.research.itcast.cn/mp/v1_0/sms/codes/${mobile}`,
@@ -108,6 +108,26 @@ export default {
           })
         })
       })
+    },
+    // 登录请求
+    handleLogin () {
+      axios({
+        method: 'POST',
+        url: 'http://ttapi.research.itcast.cn/mp/v1_0/authorizations',
+        data: this.form
+      })
+        .then(res => {
+          this.$message({
+            message: '恭喜你，这是一条成功消息',
+            type: 'success'
+          })
+          this.$router.push({
+            name: 'home'
+          })
+        })
+        .catch((e) => {
+          this.$message.error('错了哦，这是一条错误消息')
+        })
     }
   }
 }

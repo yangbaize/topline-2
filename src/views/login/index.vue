@@ -36,13 +36,13 @@
             <el-button @click="handleSendCode">获取验证码</el-button>
           </el-col>
         </el-form-item>
-        <!-- <el-form-item prop="agree">
+        <el-form-item prop="agree">
           <el-checkbox
             class="agree-checkbox"
             v-model="form.agree"
           ></el-checkbox>
           <span class="agree-text">我已阅读并同意<a href="#">用户协议</a>和<a href="#">隐私条款</a></span>
-        </el-form-item> -->
+        </el-form-item>
         <el-form-item>
           <el-button
             class="btn-login"
@@ -65,8 +65,8 @@ export default {
     return {
       form: {
         mobile: '',
-        code: ''
-        // agree: ''
+        code: '',
+        agree: ''
       },
       rules: {
         mobile: [
@@ -76,11 +76,11 @@ export default {
         code: [
           { required: true, message: '请输入验证码', trigger: 'blur' },
           { pattern: /\d{6}/, message: '长度6个字符', trigger: 'blur' }
+        ],
+        agree: [
+          { required: true, message: '请同意用户协议' },
+          { pattern: /true/, message: '请同意用户协议' }
         ]
-        // agree: [
-        //   { required: true, message: '请同意用户协议' },
-        //   { pattern: /true/, message: '请同意用户协议' }
-        // ]
       }
     }
   },
@@ -90,6 +90,17 @@ export default {
     },
     // 与后端第一次交互
     handleSendCode () {
+      // 验证手机号是否有效
+      this.$refs['form'].validateField('mobile', errorMessage => {
+        if (errorMessage.trim().length > 0) {
+          return
+        }
+        // 验证通过,初始化显示验证码
+        this.showGeetest()
+      })
+    },
+    // 验证通过,初始化显示验证码
+    showGeetest () {
       const { mobile } = this.form
       axios({
         methods: 'GET',
@@ -145,7 +156,7 @@ export default {
     submitLogin () {
       axios({
         method: 'POST',
-        url: 'http://ttapi.research.itcast.cn/mp/v1_0/authorizations',
+        url: 'http://toutiao.course.itcast.cn/mp/v1_0/authorizations',
         data: this.form
       })
         .then(res => {

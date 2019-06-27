@@ -3,6 +3,7 @@ import App from './App.vue'
 import ElementUI from 'element-ui'
 import 'element-ui/lib/theme-chalk/index.css'
 import './styles/index.less'
+import 'nprogress/nprogress.css'
 
 import router from './router'
 

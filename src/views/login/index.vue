@@ -33,7 +33,10 @@
             :offset="1"
             :span="9"
           >
-            <el-button @click="handleSendCode">获取验证码</el-button>
+            <el-button
+              @click="handleSendCode"
+              :disabled="!!codeTimer"
+            >{{ codeTimer ? `剩余${codeTimeSeconds}秒` : '获取验证码' }}</el-button>
           </el-col>
         </el-form-item>
         <el-form-item prop="agree">
@@ -58,6 +61,7 @@
 <script>
 import axios from 'axios'
 import '@/vendor/gt.js'
+const initCodeTimerSeconds = 10
 
 export default {
   name: 'AppLogin',
@@ -81,7 +85,9 @@ export default {
           { required: true, message: '请同意用户协议' },
           { pattern: /true/, message: '请同意用户协议' }
         ]
-      }
+      },
+      codeTimer: null, // 倒计时定时器
+      codeTimeSeconds: initCodeTimerSeconds // 倒计时时间
     }
   },
   methods: {
@@ -135,7 +141,8 @@ export default {
                 challenge
               }
             }).then(res => {
-              console.log(res.data)
+              // 发送短信成功发送倒计时
+              this.codeCountDown()
             })
           }).onError(function () {
             // your code
@@ -153,13 +160,17 @@ export default {
         this.submitLogin()
       })
     },
+    // 验证通过, 显示人机交互验证码动画
     submitLogin () {
       axios({
         method: 'POST',
-        url: 'http://toutiao.course.itcast.cn/mp/v1_0/authorizations',
+        // url: 'http://toutiao.course.itcast.cn/mp/v1_0/authorizations',
+        url: 'http://ttapi.research.itcast.cn/mp/v1_0/authorizations',
         data: this.form
       })
         .then(res => {
+          const userInfo = res.data.data
+          window.localStorage.setItem('user_info', JSON.stringify(userInfo))
           this.$message({
             message: '恭喜你，登录成功',
             type: 'success'
@@ -171,6 +182,16 @@ export default {
         .catch((e) => {
           this.$message.error('错了哦，请重新登陆')
         })
+    },
+    codeCountDown () {
+      this.codeTimer = window.setInterval(() => {
+        this.codeTimeSeconds--
+        if (this.codeTimeSeconds <= 0) {
+          window.clearInterval(this.codeTimer)
+          this.codeTimeSeconds = initCodeTimerSeconds
+          this.codeTimer = null
+        }
+      }, 1000)
     }
   }
 }

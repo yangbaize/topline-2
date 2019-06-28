@@ -61,6 +61,7 @@
 <script>
 import axios from 'axios'
 import '@/vendor/gt.js'
+import { saveUser } from '@/utils/auth'
 const initCodeTimerSeconds = 10
 
 export default {
@@ -72,6 +73,7 @@ export default {
         code: '',
         agree: ''
       },
+      // 失焦验证的规则
       rules: {
         mobile: [
           { required: true, message: '请输入手机号', trigger: 'blur' },
@@ -91,12 +93,14 @@ export default {
     }
   },
   methods: {
+    // 零, 显示表单页面组件的方法
     onSubmit () {
       console.log('submit!')
     },
-    // 与后端第一次交互
+
+    // 一, 验证手机号 (点击验证码--直接验证手机号)
     handleSendCode () {
-      // 验证手机号是否有效
+      // 使用 form 组件的 validate 方法
       this.$refs['form'].validateField('mobile', errorMessage => {
         if (errorMessage.trim().length > 0) {
           return
@@ -105,28 +109,30 @@ export default {
         this.showGeetest()
       })
     },
-    // 验证通过,初始化显示验证码
+
+    // 二, 验证通过,初始化显示验证码
     showGeetest () {
+      // 发送请求,获取初始化验证码的参数
       const { mobile } = this.form
       axios({
         methods: 'GET',
         url: `http://ttapi.research.itcast.cn/mp/v1_0/captchas/${mobile}`
       }).then(res => {
-        // 根据第一次与后端请求得到的数据-用于与极验服务器交互 -得到人机交互弹框-并得到申请短信接口的数据
+        // 根据第一次与后端请求得到的参数-用于与极验服务器交互 -得到人机交互弹框-并得到申请短信接口的数据
         const { data } = res.data
         window.initGeetest({// 以下配置参数来自服务端 SDK
           gt: data.gt,
           challenge: data.challenge,
           offline: !data.success,
           new_captcha: data.new_captcha,
-          product: 'bind'
-        }, function (captchaObj) {
+          product: 'bind' // 验证码人机验证效果弹框
+        }, captchaObj => {
           // 这里可以调用验证实例 captchaObj 的实例方法
-          captchaObj.onReady(function () {
+          captchaObj.onReady(() => {
             // 验证码ready之后才能调用verify方法显示验证码
             captchaObj.verify()
-          }).onSuccess(function () {
-            // console.log(captchaObj.getValidate())
+          }).onSuccess(() => {
+            // console.log(captchaObj.getValidate())  改名--为了的到下面的名字
             const { geetest_validate: validate,
               geetest_seccode: seccode,
               geetest_challenge: challenge
@@ -150,8 +156,22 @@ export default {
         })
       })
     },
-    // 登录请求
+
+    // 三, 定时器
+    codeCountDown () {
+      this.codeTimer = window.setInterval(() => {
+        this.codeTimeSeconds--
+        if (this.codeTimeSeconds <= 0) {
+          window.clearInterval(this.codeTimer)
+          this.codeTimeSeconds = initCodeTimerSeconds
+          this.codeTimer = null
+        }
+      }, 1000)
+    },
+
+    // 四, 登录请求-表单验证
     handleLogin () {
+      // 使用JS,强制校验表单(直接点击登录,校验代码--之前是光标失去焦点才校验的)
       this.$refs['form'].validate((valid) => {
         if (!valid) {
           return
@@ -160,7 +180,8 @@ export default {
         this.submitLogin()
       })
     },
-    // 验证通过, 显示人机交互验证码动画
+
+    // 五, 表单验证通过,发起登录请求
     submitLogin () {
       axios({
         method: 'POST',
@@ -170,7 +191,8 @@ export default {
       })
         .then(res => {
           const userInfo = res.data.data
-          window.localStorage.setItem('user_info', JSON.stringify(userInfo))
+          // window.localStorage.setItem('user_info', JSON.stringify(userInfo))
+          saveUser(userInfo)
           this.$message({
             message: '恭喜你，登录成功',
             type: 'success'
@@ -182,16 +204,6 @@ export default {
         .catch((e) => {
           this.$message.error('错了哦，请重新登陆')
         })
-    },
-    codeCountDown () {
-      this.codeTimer = window.setInterval(() => {
-        this.codeTimeSeconds--
-        if (this.codeTimeSeconds <= 0) {
-          window.clearInterval(this.codeTimer)
-          this.codeTimeSeconds = initCodeTimerSeconds
-          this.codeTimer = null
-        }
-      }, 1000)
     }
   }
 }

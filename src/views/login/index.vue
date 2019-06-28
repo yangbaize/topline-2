@@ -60,9 +60,11 @@
 
 <script>
 import axios from 'axios'
-import '@/vendor/gt.js'
+// import '@/vendor/gt.js'
 import { saveUser } from '@/utils/auth'
-const initCodeTimerSeconds = 10
+import initGeetest from '@/utils/init-geetest'
+
+const initCodeTimerSeconds = 60
 
 export default {
   name: 'AppLogin',
@@ -111,49 +113,42 @@ export default {
     },
 
     // 二, 验证通过,初始化显示验证码
-    showGeetest () {
+    async showGeetest () {
       // 发送请求,获取初始化验证码的参数
       const { mobile } = this.form
-      axios({
+      const data = await this.$http({
         methods: 'GET',
-        url: `http://ttapi.research.itcast.cn/mp/v1_0/captchas/${mobile}`
-      }).then(res => {
-        // 根据第一次与后端请求得到的参数-用于与极验服务器交互 -得到人机交互弹框-并得到申请短信接口的数据
-        const { data } = res.data
-        window.initGeetest({// 以下配置参数来自服务端 SDK
-          gt: data.gt,
-          challenge: data.challenge,
-          offline: !data.success,
-          new_captcha: data.new_captcha,
-          product: 'bind' // 验证码人机验证效果弹框
-        }, captchaObj => {
-          // 这里可以调用验证实例 captchaObj 的实例方法
-          captchaObj.onReady(() => {
-            // 验证码ready之后才能调用verify方法显示验证码
-            captchaObj.verify()
-          }).onSuccess(() => {
-            // console.log(captchaObj.getValidate())  改名--为了的到下面的名字
-            const { geetest_validate: validate,
-              geetest_seccode: seccode,
-              geetest_challenge: challenge
-            } = captchaObj.getValidate()
-            // 请求短信接口
-            axios({
-              methods: 'GET',
-              url: `http://ttapi.research.itcast.cn/mp/v1_0/sms/codes/${mobile}`,
-              params: {
-                seccode,
-                validate,
-                challenge
-              }
-            }).then(res => {
-              // 发送短信成功发送倒计时
-              this.codeCountDown()
-            })
-          }).onError(function () {
-            // your code
-          })
+        url: `/captchas/${mobile}`
+      })
+      // 根据第一次与后端请求得到的参数-用于与极验服务器交互 -得到人机交互弹框-并得到申请短信接口的数据
+      const captchaObj = await initGeetest({// 以下配置参数来自服务端 SDK
+        gt: data.gt,
+        challenge: data.challenge,
+        offline: !data.success,
+        new_captcha: data.new_captcha,
+        product: 'bind' // 验证码人机验证效果弹框
+      })
+      captchaObj.onReady(() => {
+        // 验证码ready之后才能调用verify方法显示验证码
+        captchaObj.verify()
+      }).onSuccess(async () => {
+        // console.log(captchaObj.getValidate())  改名--为了的到下面的名字
+        const { geetest_validate: validate,
+          geetest_seccode: seccode,
+          geetest_challenge: challenge
+        } = captchaObj.getValidate()
+        // 请求短信接口 发送短信了
+        await axios({
+          methods: 'GET',
+          url: `/sms/codes/${mobile}`,
+          params: {
+            seccode,
+            validate,
+            challenge
+          }
         })
+        // 发送短信成功发送倒计时
+        this.codeCountDown()
       })
     },
 
@@ -182,28 +177,27 @@ export default {
     },
 
     // 五, 表单验证通过,发起登录请求
-    submitLogin () {
-      axios({
-        method: 'POST',
-        // url: 'http://toutiao.course.itcast.cn/mp/v1_0/authorizations',
-        url: 'http://ttapi.research.itcast.cn/mp/v1_0/authorizations',
-        data: this.form
-      })
-        .then(res => {
-          const userInfo = res.data.data
-          // window.localStorage.setItem('user_info', JSON.stringify(userInfo))
-          saveUser(userInfo)
-          this.$message({
-            message: '恭喜你，登录成功',
-            type: 'success'
-          })
-          this.$router.push({
-            name: 'home'
-          })
+    async submitLogin () {
+      try {
+        const userInfo = await this.$http({
+          method: 'POST',
+          // url: 'http://toutiao.course.itcast.cn/mp/v1_0/authorizations',
+          url: '/authorizations',
+          data: this.form
         })
-        .catch((e) => {
-          this.$message.error('错了哦，请重新登陆')
+        // const userInfo = res.data.data
+        // window.localStorage.setItem('user_info', JSON.stringify(userInfo))
+        saveUser(userInfo)
+        this.$message({
+          message: '恭喜你，登录成功',
+          type: 'success'
         })
+        this.$router.push({
+          name: 'home'
+        })
+      } catch (err) {
+        this.$message.error('错了哦，请重新登陆')
+      }
     }
   }
 }
